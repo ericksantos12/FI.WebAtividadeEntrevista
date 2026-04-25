@@ -34,9 +34,10 @@ $(document).ready(function () {
             },
             success:
             function (r) {
-                ModalDialog("Sucesso!", r)
-                $("#formCadastro")[0].reset();                                
-                window.location.href = urlRetorno;
+                ModalDialog("Sucesso!", r, function () {
+                    $("#formCadastro")[0].reset();
+                    window.location.href = urlRetorno;
+                });
             }
         });
     })
@@ -52,7 +53,7 @@ function MaskCPF(value) {
     return value;
 }
 
-function ModalDialog(titulo, texto) {
+function ModalDialog(titulo, texto, onClose) {
     var random = Math.random().toString().replace('.', '');
     var texto = '<div id="' + random + '" class="modal fade">                                                               ' +
         '        <div class="modal-dialog">                                                                                 ' +
@@ -73,5 +74,11 @@ function ModalDialog(titulo, texto) {
         '</div> <!-- /.modal -->                                                                                        ';
 
     $('body').append(texto);
+    $('#' + random).on('hidden.bs.modal', function () {
+        if (onClose)
+            onClose();
+
+        $(this).remove();
+    });
     $('#' + random).modal('show');
 }
