@@ -14,6 +14,8 @@ namespace FI.AtividadeEntrevista.BLL
         /// <param name="cliente">Objeto de cliente</param>
         public long Incluir(DML.Cliente cliente)
         {
+            cliente.CPF = Validacao.Cpf.Normalizar(cliente.CPF);
+
             DAL.DaoCliente cli = new DAL.DaoCliente();
             return cli.Incluir(cliente);
         }
@@ -24,6 +26,8 @@ namespace FI.AtividadeEntrevista.BLL
         /// <param name="cliente">Objeto de cliente</param>
         public void Alterar(DML.Cliente cliente)
         {
+            cliente.CPF = Validacao.Cpf.Normalizar(cliente.CPF);
+
             DAL.DaoCliente cli = new DAL.DaoCliente();
             cli.Alterar(cliente);
         }
@@ -76,7 +80,19 @@ namespace FI.AtividadeEntrevista.BLL
         public bool VerificarExistencia(string CPF)
         {
             DAL.DaoCliente cli = new DAL.DaoCliente();
-            return cli.VerificarExistencia(CPF);
+            return cli.VerificarExistencia(Validacao.Cpf.Normalizar(CPF));
+        }
+
+        /// <summary>
+        /// VerificaExistencia ignorando um cliente existente
+        /// </summary>
+        /// <param name="CPF"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public bool VerificarExistencia(string CPF, long id)
+        {
+            DAL.DaoCliente cli = new DAL.DaoCliente();
+            return cli.VerificarExistencia(Validacao.Cpf.Normalizar(CPF), id);
         }
     }
 }

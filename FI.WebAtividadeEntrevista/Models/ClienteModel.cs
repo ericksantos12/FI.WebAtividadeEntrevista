@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web;
+using WebAtividadeEntrevista.Models.Validacao;
 
 namespace WebAtividadeEntrevista.Models
 {
@@ -12,7 +13,14 @@ namespace WebAtividadeEntrevista.Models
     public class ClienteModel
     {
         public long Id { get; set; }
-        
+
+        /// <summary>
+        /// CPF
+        /// </summary>
+        [Required(ErrorMessage = "O CPF e obrigatorio")]
+        [CpfValidation(ErrorMessage = "Digite um CPF valido")]
+        public string CPF { get; set; }
+
         /// <summary>
         /// CEP
         /// </summary>

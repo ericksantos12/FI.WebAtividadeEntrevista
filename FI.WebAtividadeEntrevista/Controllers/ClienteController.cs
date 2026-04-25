@@ -6,6 +6,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using FI.AtividadeEntrevista.DML;
+using FI.AtividadeEntrevista.Validacao;
 
 namespace WebAtividadeEntrevista.Controllers
 {
@@ -38,9 +39,16 @@ namespace WebAtividadeEntrevista.Controllers
             }
             else
             {
-                
+                model.CPF = Cpf.Normalizar(model.CPF);
+                if (bo.VerificarExistencia(model.CPF))
+                {
+                    Response.StatusCode = 400;
+                    return Json("CPF ja cadastrado");
+                }
+
                 model.Id = bo.Incluir(new Cliente()
                 {                    
+                    CPF = model.CPF,
                     CEP = model.CEP,
                     Cidade = model.Cidade,
                     Email = model.Email,
@@ -73,9 +81,17 @@ namespace WebAtividadeEntrevista.Controllers
             }
             else
             {
+                model.CPF = Cpf.Normalizar(model.CPF);
+                if (bo.VerificarExistencia(model.CPF, model.Id))
+                {
+                    Response.StatusCode = 400;
+                    return Json("CPF ja cadastrado");
+                }
+
                 bo.Alterar(new Cliente()
                 {
                     Id = model.Id,
+                    CPF = model.CPF,
                     CEP = model.CEP,
                     Cidade = model.Cidade,
                     Email = model.Email,
@@ -103,6 +119,7 @@ namespace WebAtividadeEntrevista.Controllers
                 model = new ClienteModel()
                 {
                     Id = cliente.Id,
+                    CPF = cliente.CPF,
                     CEP = cliente.CEP,
                     Cidade = cliente.Cidade,
                     Email = cliente.Email,
