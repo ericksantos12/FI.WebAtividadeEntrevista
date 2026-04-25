@@ -1,21 +1,15 @@
 ﻿
 $(document).ready(function () {
+    $('#CPF').on('input keyup change blur', function () {
+        $(this).val(MaskCPF($(this).val()));
+    });
+
     $('#formCadastro').submit(function (e) {
         e.preventDefault();
         $.ajax({
             url: urlPost,
             method: "POST",
-            data: {
-                "NOME": $(this).find("#Nome").val(),
-                "CEP": $(this).find("#CEP").val(),
-                "Email": $(this).find("#Email").val(),
-                "Sobrenome": $(this).find("#Sobrenome").val(),
-                "Nacionalidade": $(this).find("#Nacionalidade").val(),
-                "Estado": $(this).find("#Estado").val(),
-                "Cidade": $(this).find("#Cidade").val(),
-                "Logradouro": $(this).find("#Logradouro").val(),
-                "Telefone": $(this).find("#Telefone").val()
-            },
+            data: $(this).serialize(),
             error:
             function (r) {
                 if (r.status == 400)
@@ -32,6 +26,15 @@ $(document).ready(function () {
     })
     
 })
+
+function MaskCPF(value) {
+    value = value || '';
+    value = value.replace(/\D/g, '').substring(0, 11);
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d)/, '$1.$2');
+    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    return value;
+}
 
 function ModalDialog(titulo, texto) {
     var random = Math.random().toString().replace('.', '');

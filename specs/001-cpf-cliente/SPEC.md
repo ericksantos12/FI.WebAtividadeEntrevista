@@ -9,7 +9,7 @@ Adicionar o campo CPF ao cadastro e alteracao de cliente, mantendo o padrao visu
 - Exibir o campo `CPF` abaixo do campo `Nome` no formulario de cliente.
 - O input deve ocupar a mesma largura do campo `Nome`, encaixado no grid Bootstrap atual.
 - O campo deve seguir o padrao visual dos demais campos: `form-group`, `label`, `form-control`, placeholder e validacao visual HTML.
-- O CPF deve ser obrigatorio.
+- O CPF deve ser obrigatorio no HTML e no model server-side.
 - O CPF deve aceitar mascara no formato `999.999.999-99`.
 - O CPF deve ser validado pelo calculo padrao dos dois digitos verificadores.
 - O sistema nao deve permitir cadastrar CPF ja existente.

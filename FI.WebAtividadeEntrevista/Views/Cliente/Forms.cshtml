@@ -1,18 +1,27 @@
 ﻿
+@model WebAtividadeEntrevista.Models.ClienteModel
+
 <form id="formCadastro" method="post">
+    <input type="hidden" id="Id" name="Id" value="@(Model != null ? Model.Id : 0)">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="form-group">
                 <label for="Nome">Nome:</label>
                 <input required="required" type="text" class="form-control" id="Nome" name="Nome" placeholder="Ex.: João" maxlength="50">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="Sobrenome">Sobrenome:</label>
+                <input required="required" type="text" class="form-control" id="Sobrenome" name="Sobrenome" placeholder="Ex.: da Silva" maxlength="255">
             </div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
-                <label for="Sobrenome">Sobrenome:</label>
-                <input required="required" type="text" class="form-control" id="Sobrenome" name="Sobrenome" placeholder="Ex.: da Silva" maxlength="255">
+                <label for="CPF">CPF:</label>
+                <input required="required" type="text" class="form-control" id="CPF" name="CPF" value="@(Model != null ? Model.CPF : string.Empty)" placeholder="Ex.: 123.456.789-09" maxlength="14">
             </div>
         </div>
         <div class="col-md-6">
@@ -83,3 +92,33 @@
 
 
 </form>
+
+<script>
+    (function () {
+        function maskCPF(value) {
+            value = (value || '').replace(/\D/g, '').substring(0, 11);
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            return value;
+        }
+
+        function bindCPFMask() {
+            var cpf = document.getElementById('CPF');
+
+            if (!cpf)
+                return;
+
+            cpf.addEventListener('input', function () {
+                cpf.value = maskCPF(cpf.value);
+            });
+
+            cpf.value = maskCPF(cpf.value);
+        }
+
+        if (document.readyState === 'loading')
+            document.addEventListener('DOMContentLoaded', bindCPFMask);
+        else
+            bindCPFMask();
+    })();
+</script>

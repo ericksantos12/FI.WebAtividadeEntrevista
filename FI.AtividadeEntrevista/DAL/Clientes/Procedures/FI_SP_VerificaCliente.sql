@@ -1,4 +1,4 @@
-CREATE PROC FI_SP_VerificaCliente
+CREATE OR ALTER PROC FI_SP_VerificaCliente
 	@CPF VARCHAR(11),
 	@Id BIGINT = 0
 AS
