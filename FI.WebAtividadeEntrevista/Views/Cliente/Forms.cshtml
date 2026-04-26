@@ -1,8 +1,11 @@
 ﻿
 @model WebAtividadeEntrevista.Models.ClienteModel
+@using System.Collections.Generic
 
 <form id="formCadastro" method="post">
     <input type="hidden" id="Id" name="Id" value="@(Model != null ? Model.Id : 0)">
+    <input type="hidden" id="BeneficiariosJson" name="BeneficiariosJson" value='@Html.Raw(Json.Encode(Model != null ? Model.Beneficiarios : new List<WebAtividadeEntrevista.Models.BeneficiarioModel>()))'>
+    <br />
     <div class="row">
         <div class="col-md-6">
             <div class="form-group">
@@ -83,15 +86,66 @@
 
     <div class="row">
         <div class="col-lg-12">
+            <div class="pull-left">
+                <button type="button" id="btnBeneficiarios" class="btn btn-sm btn-primary pull-left">Beneficiários</button>
+            </div>
+        </div>
+        <div class="col-lg-12">
             <div class="pull-right">
                 <button type="submit" class="btn btn-sm btn-success">Salvar</button>
                 @Html.ActionLink("Voltar", "Index", "Cliente", new { }, new { @class = "btn btn-sm btn-danger" })
             </div>
         </div>
     </div>
-
-
 </form>
+
+<div id="modalBeneficiarios" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Beneficiários</h4>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="BeneficiarioCPF">CPF:</label>
+                            <input type="text" class="form-control" id="BeneficiarioCPF" placeholder="Ex.: 123.456.789-09" maxlength="14">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="BeneficiarioNome">Nome:</label>
+                            <input type="text" class="form-control" id="BeneficiarioNome" placeholder="Ex.: João da Silva" maxlength="50">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group" style="margin-top: 25px;">
+                            <button type="button" id="btnSalvarBeneficiario" class="btn btn-sm btn-success btn-block">Salvar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="gridBeneficiarios" class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>CPF</th>
+                                <th>Nome</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
     (function () {

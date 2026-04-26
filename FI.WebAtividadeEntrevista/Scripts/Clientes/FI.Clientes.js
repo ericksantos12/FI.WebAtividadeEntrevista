@@ -1,11 +1,15 @@
 ﻿
 $(document).ready(function () {
+    BeneficiariosInit([]);
+
     $('#CPF').on('input keyup change blur', function () {
         $(this).val(MaskCPF($(this).val()));
     });
 
     $('#formCadastro').submit(function (e) {
         e.preventDefault();
+        syncBeneficiariosPayload();
+
         $.ajax({
             url: urlPost,
             method: "POST",
@@ -19,22 +23,13 @@ $(document).ready(function () {
             },
             success:
             function (r) {
-                ModalDialog("Sucesso!", r)
+                ModalDialog("Sucesso!", r);
                 $("#formCadastro")[0].reset();
+                BeneficiariosInit([]);
             }
         });
-    })
-    
-})
-
-function MaskCPF(value) {
-    value = value || '';
-    value = value.replace(/\D/g, '').substring(0, 11);
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    return value;
-}
+    });
+});
 
 function ModalDialog(titulo, texto) {
     var random = Math.random().toString().replace('.', '');
@@ -57,5 +52,8 @@ function ModalDialog(titulo, texto) {
         '</div> <!-- /.modal -->                                                                                        ';
 
     $('body').append(texto);
+    $('#' + random).on('hidden.bs.modal', function () {
+        $(this).remove();
+    });
     $('#' + random).modal('show');
 }

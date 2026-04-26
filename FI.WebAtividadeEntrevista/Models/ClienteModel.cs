@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FI.AtividadeEntrevista.Validacao;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -10,9 +12,69 @@ namespace WebAtividadeEntrevista.Models
     /// <summary>
     /// Classe de Modelo de Cliente
     /// </summary>
-    public class ClienteModel
+    public class ClienteModel : IValidatableObject
     {
         public long Id { get; set; }
+
+        public ClienteModel()
+        {
+            Beneficiarios = new List<BeneficiarioModel>();
+        }
+
+        [JsonIgnore]
+        public List<BeneficiarioModel> Beneficiarios { get; set; }
+
+        [JsonIgnore]
+        public bool BeneficiariosJsonValido { get; private set; }
+
+        public string BeneficiariosJson { get; set; }
+
+        public void CarregarBeneficiarios()
+        {
+            BeneficiariosJsonValido = true;
+
+            if (string.IsNullOrWhiteSpace(BeneficiariosJson))
+            {
+                Beneficiarios = new List<BeneficiarioModel>();
+                return;
+            }
+
+            try
+            {
+                Beneficiarios = JsonConvert.DeserializeObject<List<BeneficiarioModel>>(BeneficiariosJson) ?? new List<BeneficiarioModel>();
+            }
+            catch (JsonException)
+            {
+                BeneficiariosJsonValido = false;
+                Beneficiarios = new List<BeneficiarioModel>();
+            }
+        }
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            CarregarBeneficiarios();
+
+            if (!BeneficiariosJsonValido)
+            {
+                yield return new ValidationResult("Os beneficiarios informados sao invalidos");
+                yield break;
+            }
+
+            for (int i = 0; i < Beneficiarios.Count; i++)
+            {
+                BeneficiarioModel beneficiario = Beneficiarios[i];
+                string cpf = beneficiario.CPF;
+                string nome = beneficiario.Nome;
+
+                if (string.IsNullOrWhiteSpace(cpf))
+                    yield return new ValidationResult("O CPF do beneficiario e obrigatorio");
+                else if (!Cpf.Validar(cpf))
+                    yield return new ValidationResult("Digite um CPF valido para o beneficiario");
+
+                if (string.IsNullOrWhiteSpace(nome))
+                    yield return new ValidationResult("O nome do beneficiario e obrigatorio");
+            }
+        }
 
         /// <summary>
         /// CPF
@@ -74,6 +136,5 @@ namespace WebAtividadeEntrevista.Models
         /// Telefone
         /// </summary>
         public string Telefone { get; set; }
-
-    }    
+    }
 }

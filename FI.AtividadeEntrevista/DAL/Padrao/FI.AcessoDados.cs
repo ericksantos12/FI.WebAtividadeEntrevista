@@ -19,33 +19,47 @@ namespace FI.AtividadeEntrevista.DAL
             }
         }
 
+        internal SqlConnection CriarConexao()
+        {
+            return new SqlConnection(stringDeConexao);
+        }
+
         internal void Executar(string NomeProcedure, List<SqlParameter> parametros)
         {
+            using (SqlConnection conexao = CriarConexao())
+            {
+                conexao.Open();
+                Executar(NomeProcedure, parametros, conexao, null);
+            }
+        }
+
+        internal void Executar(string NomeProcedure, List<SqlParameter> parametros, SqlConnection conexao, SqlTransaction transacao)
+        {
             SqlCommand comando = new SqlCommand();
-            SqlConnection conexao = new SqlConnection(stringDeConexao);
             comando.Connection = conexao;
+            comando.Transaction = transacao;
             comando.CommandType = CommandType.StoredProcedure;
             comando.CommandText = NomeProcedure;
             foreach (var item in parametros)
                 comando.Parameters.Add(item);
 
-            conexao.Open();
-            try
-            {
-                comando.ExecuteNonQuery();
-            }
-            finally
-            {
-                conexao.Close();
-            }
+            comando.ExecuteNonQuery();
         }
 
         internal DataSet Consultar(string NomeProcedure, List<SqlParameter> parametros)
         {
-            SqlCommand comando = new SqlCommand();
-            SqlConnection conexao = new SqlConnection(stringDeConexao);
+            using (SqlConnection conexao = CriarConexao())
+            {
+                conexao.Open();
+                return Consultar(NomeProcedure, parametros, conexao, null);
+            }
+        }
 
+        internal DataSet Consultar(string NomeProcedure, List<SqlParameter> parametros, SqlConnection conexao, SqlTransaction transacao)
+        {
+            SqlCommand comando = new SqlCommand();
             comando.Connection = conexao;
+            comando.Transaction = transacao;
             comando.CommandType = CommandType.StoredProcedure;
             comando.CommandText = NomeProcedure;
             foreach (var item in parametros)
@@ -53,19 +67,8 @@ namespace FI.AtividadeEntrevista.DAL
 
             SqlDataAdapter adapter = new SqlDataAdapter(comando);
             DataSet ds = new DataSet();
-            conexao.Open();
-
-            try
-            {
-                adapter.Fill(ds);
-            }
-            finally
-            {
-                conexao.Close();
-            }
-
+            adapter.Fill(ds);
             return ds;
         }
-
     }
 }

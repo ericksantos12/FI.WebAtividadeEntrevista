@@ -1,152 +1,188 @@
-﻿using FI.AtividadeEntrevista.DML;
+﻿using FI.AtividadeEntrevista.DAL.Beneficiarios;
+using FI.AtividadeEntrevista.DML;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 
 namespace FI.AtividadeEntrevista.DAL
 {
-    /// <summary>
-    /// Classe de acesso a dados de Cliente
-    /// </summary>
     internal class DaoCliente : AcessoDados
     {
-        /// <summary>
-        /// Inclui um novo cliente
-        /// </summary>
-        /// <param name="cliente">Objeto de cliente</param>
         internal long Incluir(DML.Cliente cliente)
         {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
+            using (SqlConnection conexao = CriarConexao())
+            {
+                conexao.Open();
+                SqlTransaction transacao = conexao.BeginTransaction();
 
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Nome", cliente.Nome));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Sobrenome", cliente.Sobrenome));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Nacionalidade", cliente.Nacionalidade));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CEP", cliente.CEP));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Estado", cliente.Estado));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Cidade", cliente.Cidade));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Logradouro", cliente.Logradouro));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Email", cliente.Email));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Telefone", cliente.Telefone));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", cliente.CPF));
+                try
+                {
+                    long idCliente = IncluirCliente(cliente, conexao, transacao);
+                    cliente.Id = idCliente;
+                    PersistirBeneficiarios(cliente, conexao, transacao);
+                    transacao.Commit();
+                    return idCliente;
+                }
+                catch
+                {
+                    transacao.Rollback();
+                    throw;
+                }
+            }
+        }
 
-            DataSet ds = base.Consultar("FI_SP_IncClienteV2", parametros);
+        internal DML.Cliente Consultar(long Id)
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("Id", Id));
+
+            DataSet ds = base.Consultar("FI_SP_ConsCliente", parametros);
+            List<DML.Cliente> cli = Converter(ds);
+            DML.Cliente cliente = cli.FirstOrDefault();
+
+            if (cliente != null)
+                cliente.Beneficiarios = new DaoBeneficiario().Listar(cliente.Id);
+
+            return cliente;
+        }
+
+        internal bool VerificarExistencia(string CPF)
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("CPF", CPF));
+
+            DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
+            return ds.Tables[0].Rows.Count > 0;
+        }
+
+        internal bool VerificarExistencia(string CPF, long id)
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("CPF", CPF));
+            parametros.Add(new SqlParameter("Id", id));
+
+            DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
+            return ds.Tables[0].Rows.Count > 0;
+        }
+
+        internal List<Cliente> Pesquisa(int iniciarEm, int quantidade, string campoOrdenacao, bool crescente, out int qtd)
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("iniciarEm", iniciarEm));
+            parametros.Add(new SqlParameter("quantidade", quantidade));
+            parametros.Add(new SqlParameter("campoOrdenacao", campoOrdenacao));
+            parametros.Add(new SqlParameter("crescente", crescente));
+
+            DataSet ds = base.Consultar("FI_SP_PesqCliente", parametros);
+            List<DML.Cliente> cli = Converter(ds);
+
+            int iQtd = 0;
+            if (ds.Tables.Count > 1 && ds.Tables[1].Rows.Count > 0)
+                int.TryParse(ds.Tables[1].Rows[0][0].ToString(), out iQtd);
+
+            qtd = iQtd;
+            return cli;
+        }
+
+        internal List<DML.Cliente> Listar()
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("Id", 0));
+
+            DataSet ds = base.Consultar("FI_SP_ConsCliente", parametros);
+            return Converter(ds);
+        }
+
+        internal void Alterar(DML.Cliente cliente)
+        {
+            using (SqlConnection conexao = CriarConexao())
+            {
+                conexao.Open();
+                SqlTransaction transacao = conexao.BeginTransaction();
+
+                try
+                {
+                    AlterarCliente(cliente, conexao, transacao);
+                    PersistirBeneficiarios(cliente, conexao, transacao);
+                    transacao.Commit();
+                }
+                catch
+                {
+                    transacao.Rollback();
+                    throw;
+                }
+            }
+        }
+
+        internal void Excluir(long Id)
+        {
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("Id", Id));
+
+            base.Executar("FI_SP_DelCliente", parametros);
+        }
+
+        private long IncluirCliente(DML.Cliente cliente, SqlConnection conexao, SqlTransaction transacao)
+        {
+            List<SqlParameter> parametros = ObterParametrosCliente(cliente);
+            DataSet ds = base.Consultar("FI_SP_IncClienteV2", parametros, conexao, transacao);
             long ret = 0;
             if (ds.Tables[0].Rows.Count > 0)
                 long.TryParse(ds.Tables[0].Rows[0][0].ToString(), out ret);
             return ret;
         }
 
-        /// <summary>
-        /// Inclui um novo cliente
-        /// </summary>
-        /// <param name="cliente">Objeto de cliente</param>
-        internal DML.Cliente Consultar(long Id)
+        private void AlterarCliente(DML.Cliente cliente, SqlConnection conexao, SqlTransaction transacao)
         {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Id", Id));
-
-            DataSet ds = base.Consultar("FI_SP_ConsCliente", parametros);
-            List<DML.Cliente> cli = Converter(ds);
-
-            return cli.FirstOrDefault();
+            List<SqlParameter> parametros = ObterParametrosCliente(cliente);
+            parametros.Add(new SqlParameter("ID", cliente.Id));
+            base.Executar("FI_SP_AltCliente", parametros, conexao, transacao);
         }
 
-        internal bool VerificarExistencia(string CPF)
+        private List<SqlParameter> ObterParametrosCliente(DML.Cliente cliente)
         {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", CPF));
-
-            DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
-
-            return ds.Tables[0].Rows.Count > 0;
+            List<SqlParameter> parametros = new List<SqlParameter>();
+            parametros.Add(new SqlParameter("Nome", cliente.Nome));
+            parametros.Add(new SqlParameter("Sobrenome", cliente.Sobrenome));
+            parametros.Add(new SqlParameter("Nacionalidade", cliente.Nacionalidade));
+            parametros.Add(new SqlParameter("CEP", cliente.CEP));
+            parametros.Add(new SqlParameter("Estado", cliente.Estado));
+            parametros.Add(new SqlParameter("Cidade", cliente.Cidade));
+            parametros.Add(new SqlParameter("Logradouro", cliente.Logradouro));
+            parametros.Add(new SqlParameter("Email", cliente.Email));
+            parametros.Add(new SqlParameter("Telefone", cliente.Telefone));
+            parametros.Add(new SqlParameter("CPF", cliente.CPF));
+            return parametros;
         }
 
-        internal bool VerificarExistencia(string CPF, long id)
+        private void PersistirBeneficiarios(Cliente cliente, SqlConnection conexao, SqlTransaction transacao)
         {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
+            DaoBeneficiario daoBeneficiario = new DaoBeneficiario();
+            List<Beneficiario> atuais = daoBeneficiario.Listar(cliente.Id, conexao, transacao);
+            List<Beneficiario> informados = cliente.Beneficiarios ?? new List<Beneficiario>();
 
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", CPF));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Id", id));
+            foreach (Beneficiario beneficiario in informados)
+            {
+                beneficiario.IdCliente = cliente.Id;
 
-            DataSet ds = base.Consultar("FI_SP_VerificaCliente", parametros);
+                if (beneficiario.Id == 0)
+                {
+                    daoBeneficiario.Incluir(beneficiario, conexao, transacao);
+                    continue;
+                }
 
-            return ds.Tables[0].Rows.Count > 0;
-        }
+                if (!atuais.Any(x => x.Id == beneficiario.Id))
+                    throw new DataException("Beneficiario invalido para o cliente informado");
 
-        internal List<Cliente> Pesquisa(int iniciarEm, int quantidade, string campoOrdenacao, bool crescente, out int qtd)
-        {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
+                daoBeneficiario.Alterar(beneficiario, conexao, transacao);
+            }
 
-            parametros.Add(new System.Data.SqlClient.SqlParameter("iniciarEm", iniciarEm));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("quantidade", quantidade));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("campoOrdenacao", campoOrdenacao));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("crescente", crescente));
-
-            DataSet ds = base.Consultar("FI_SP_PesqCliente", parametros);
-            List<DML.Cliente> cli = Converter(ds);
-
-            int iQtd = 0;
-
-            if (ds.Tables.Count > 1 && ds.Tables[1].Rows.Count > 0)
-                int.TryParse(ds.Tables[1].Rows[0][0].ToString(), out iQtd);
-
-            qtd = iQtd;
-
-            return cli;
-        }
-
-        /// <summary>
-        /// Lista todos os clientes
-        /// </summary>
-        internal List<DML.Cliente> Listar()
-        {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Id", 0));
-
-            DataSet ds = base.Consultar("FI_SP_ConsCliente", parametros);
-            List<DML.Cliente> cli = Converter(ds);
-
-            return cli;
-        }
-
-        /// <summary>
-        /// Inclui um novo cliente
-        /// </summary>
-        /// <param name="cliente">Objeto de cliente</param>
-        internal void Alterar(DML.Cliente cliente)
-        {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Nome", cliente.Nome));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Sobrenome", cliente.Sobrenome));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Nacionalidade", cliente.Nacionalidade));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CEP", cliente.CEP));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Estado", cliente.Estado));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Cidade", cliente.Cidade));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Logradouro", cliente.Logradouro));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Email", cliente.Email));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Telefone", cliente.Telefone));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("CPF", cliente.CPF));
-            parametros.Add(new System.Data.SqlClient.SqlParameter("ID", cliente.Id));
-
-            base.Executar("FI_SP_AltCliente", parametros);
-        }
-
-
-        /// <summary>
-        /// Excluir Cliente
-        /// </summary>
-        /// <param name="cliente">Objeto de cliente</param>
-        internal void Excluir(long Id)
-        {
-            List<System.Data.SqlClient.SqlParameter> parametros = new List<System.Data.SqlClient.SqlParameter>();
-
-            parametros.Add(new System.Data.SqlClient.SqlParameter("Id", Id));
-
-            base.Executar("FI_SP_DelCliente", parametros);
+            foreach (Beneficiario beneficiarioAtual in atuais)
+            {
+                if (!informados.Any(x => x.Id == beneficiarioAtual.Id))
+                    daoBeneficiario.Excluir(beneficiarioAtual.Id, conexao, transacao);
+            }
         }
 
         private List<DML.Cliente> Converter(DataSet ds)

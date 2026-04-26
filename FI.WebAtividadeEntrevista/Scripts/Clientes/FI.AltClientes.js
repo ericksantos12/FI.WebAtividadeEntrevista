@@ -18,9 +18,12 @@ $(document).ready(function () {
         $('#formCadastro #Telefone').val(obj.Telefone);
     }
 
+    BeneficiariosInit(obj && obj.Beneficiarios ? obj.Beneficiarios : []);
+
     $('#formCadastro').submit(function (e) {
         e.preventDefault();
-        
+        syncBeneficiariosPayload();
+
         $.ajax({
             url: urlPost,
             method: "POST",
@@ -40,18 +43,8 @@ $(document).ready(function () {
                 });
             }
         });
-    })
-    
-})
-
-function MaskCPF(value) {
-    value = value || '';
-    value = value.replace(/\D/g, '').substring(0, 11);
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d)/, '$1.$2');
-    value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-    return value;
-}
+    });
+});
 
 function ModalDialog(titulo, texto, onClose) {
     var random = Math.random().toString().replace('.', '');
